@@ -1,0 +1,8 @@
+#access_key = ""
+#secret_key = ""
+region = "us-east-2"
+instance_type = "t2.micro"
+ami = "ami-0520e698dd500b1d1"
+associate_public_ip_address = "true"
+subnet_id =  "subnet-65c36d29"
+count_instance = "1"
