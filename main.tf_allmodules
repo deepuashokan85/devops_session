@@ -1,0 +1,219 @@
+provider "aws" {
+  # Credentials to access aws cluster
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  region = "${var.region}"
+}
+
+#VPC
+resource "aws_vpc" "sandeepvpc" {
+    cidr_block = "10.0.0.0/24"
+    instance_tenancy = "default"
+    enable_dns_support = "true"
+    enable_dns_hostnames = "true"
+    enable_classiclink = "false"
+    tags = {
+        Name = "sandeepvpc"
+    }
+
+}
+
+
+# Subnets
+resource "aws_subnet" "sandeepvpc-public-1" {
+    vpc_id = "${aws_vpc.sandeepvpc.id}"
+    cidr_block = "10.0.0.0/28"
+    map_public_ip_on_launch = "true"
+    availability_zone = "us-east-2a"
+    depends_on = ["aws_vpc.sandeepvpc"]
+    tags = {
+        Name = "sandeepvpc-public-1"
+    }
+
+}
+
+resource "aws_subnet" "sandeepvpc-public-2" {
+    vpc_id = "${aws_vpc.sandeepvpc.id}"
+    cidr_block = "10.0.0.16/28"
+    map_public_ip_on_launch = "true"
+    availability_zone = "us-east-2b"
+    depends_on = ["aws_vpc.sandeepvpc"]
+    tags = {
+        Name = "sandeepvpc-public-2"
+    }
+}
+
+#=====================================================
+
+# Internet GW
+resource "aws_internet_gateway" "sandeepvpc-igw" {
+    vpc_id = "${aws_vpc.sandeepvpc.id}"
+    depends_on = ["aws_vpc.sandeepvpc"]
+    tags = {
+        Name = "sandeepvpc-igw"
+    }
+}
+
+
+# route tables
+resource "aws_route_table" "sandeepvpc-public-route" {
+    vpc_id = "${aws_vpc.sandeepvpc.id}"
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = "${aws_internet_gateway.sandeepvpc-igw.id}"
+    }
+    tags = {
+        Name = "sandeepvpc-public-route"
+    }
+depends_on = ["aws_internet_gateway.sandeepvpc-igw"]
+}
+
+# route associations public
+
+resource "aws_route_table_association" "public-2-a" {
+    subnet_id = "${aws_subnet.sandeepvpc-public-1.id}"
+    route_table_id = "${aws_route_table.sandeepvpc-public-route.id}"
+    depends_on = ["aws_route_table.sandeepvpc-public-route",
+                 "aws_subnet.sandeepvpc-public-1", ]
+}
+
+resource "aws_route_table_association" "public-2-b" {
+    subnet_id = "${aws_subnet.sandeepvpc-public-2.id}"
+    route_table_id = "${aws_route_table.sandeepvpc-public-route.id}"
+    depends_on = ["aws_route_table.sandeepvpc-public-route",
+                  "aws_subnet.sandeepvpc-public-2", ]
+}
+
+
+
+#=======================================
+
+
+
+#ALB
+
+resource "aws_lb" "sandeep-webalb" {
+  name = "sandeep-webalb"
+  internal = false
+  load_balancer_type = "application"
+  subnets = ["${aws_subnet.sandeepvpc-public-1.id}","${aws_subnet.sandeepvpc-public-2.id}"]
+security_groups    = ["${aws_security_group.allow_tls.id}"]
+depends_on = [aws_subnet.sandeepvpc-public-1,
+              aws_subnet.sandeepvpc-public-2,
+	      aws_security_group.allow_tls, ]
+}
+
+resource "aws_lb_target_group" "sandeep-alb-tg" {
+  name     = "sandeep-alb-tg"
+  port     = 80
+  protocol = "HTTP"
+  target_type = "instance"
+  vpc_id   = "${aws_vpc.sandeepvpc.id}"
+depends_on = [aws_instance.san-ec2-inst,
+             aws_vpc.sandeepvpc,]
+}
+
+
+
+
+resource "aws_lb_target_group_attachment" "san-attach-1" {
+  target_group_arn = "${aws_lb_target_group.sandeep-alb-tg.arn}"
+  target_id        = "${aws_instance.san-ec2-inst.0.id}"
+  port             = 80
+depends_on = [aws_lb_target_group.sandeep-alb-tg,
+	     aws_instance.san-ec2-inst,]
+
+}
+
+resource "aws_lb_target_group_attachment" "san-attach-2" {
+  target_group_arn = "${aws_lb_target_group.sandeep-alb-tg.arn}"
+  target_id        = "${aws_instance.san-ec2-inst.1.id}"
+  port             = 80
+depends_on = [aws_lb_target_group.sandeep-alb-tg,
+             aws_instance.san-ec2-inst,]
+
+}
+
+
+resource "aws_lb_listener" "san_front_end" {
+	load_balancer_arn = "${aws_lb.sandeep-webalb.arn}"
+	port = "80"
+depends_on = [aws_lb.sandeep-webalb,
+	      aws_lb_target_group.sandeep-alb-tg,]
+default_action {
+                target_group_arn = "${aws_lb_target_group.sandeep-alb-tg.arn}"
+                type             = "forward"
+        }
+}
+
+#========================================
+
+#EC2 Instance
+
+resource "aws_key_pair" "terraform-keys3" {
+key_name = "terraform-keys3"
+public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD1k0iQN6MvBkrHPoVYJkChXsY1PAIF6zO045guCKcEpWpji6HxoHw4qTcWOxwXbvenNDGmqqS2bXRPLCuoUD0ONvLG1+5RjRX2Ci7Ee8HdRQID3gGEMQhz/APsJ1N5Lu/1uiZnomevjbCBj+QygnAh4wloVJRqNguV/VbNmgOKdzUmLbY6JOFh0VsgiYS1fn2YHfHLJyx/XqJajZqqGhEqETyHTsSMj8PRPAVK4o0TxZfmtk4QwgNZuY8s8z7hGw7yz7G5oqOPk9Wij391B/8aXJCWX14WQnV10qcym8Als0aeyZDmhkkSqg5WQ/Q4F0loSHtGM60gZLt2My0FXWk5 sandvenk@sandvenk-mac"
+}
+
+
+resource "aws_instance" "san-ec2-inst" {
+  instance_type = "${var.instance_type}"
+  ami           = "${var.ami}"
+  count         = 2
+  subnet_id = "${element(list("${aws_subnet.sandeepvpc-public-1.id}", "${aws_subnet.sandeepvpc-public-2.id}"), count.index)}"
+  associate_public_ip_address = "${var.associate_public_ip_address}"
+key_name = "terraform-keys3"
+ vpc_security_group_ids = ["${aws_security_group.allow_tls.id}"]
+depends_on = [aws_subnet.sandeepvpc-public-1,
+              aws_subnet.sandeepvpc-public-2,
+	aws_security_group.allow_tls]
+
+
+
+
+connection {
+host = "${self.public_ip}"
+#host = "${element(aws_instance.san-ec2-inst.*.public_ip, count.index)}"
+type     = "ssh"    
+user = "ec2-user"
+private_key   = "${file("/Users/sandvenk/.ssh/terraform-keys3")}"
+  }
+
+
+provisioner "file" {
+    source      = "/Users/sandvenk/Documents/AWS/Terraform/ALB_HTTP/http-script.sh"
+    destination = "/tmp/http-script.sh"
+ }
+
+provisioner "remote-exec" {
+    inline = [
+      "sudo chmod +x /tmp/http-script.sh",
+      "sudo /tmp/http-script.sh "]
+}
+}
+
+resource "aws_security_group" "allow_tls" {
+  name        = "allow_tls"
+  description = "Allow TLS inbound traffic"
+  vpc_id       = "${aws_vpc.sandeepvpc.id}"
+
+
+ingress {
+    # TLS (change to whatever ports you need)
+    from_port   = 0
+    to_port     = 0
+protocol = "-1"
+cidr_blocks = ["0.0.0.0/0"]
+}
+
+
+  egress {
+    from_port       = 0
+    to_port         = 0
+protocol = "-1"
+cidr_blocks = ["0.0.0.0/0"]
+  }
+
+depends_on = [aws_vpc.sandeepvpc]
+
+}
