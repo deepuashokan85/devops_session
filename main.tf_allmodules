@@ -1,7 +1,7 @@
 provider "aws" {
   # Credentials to access aws cluster
-  access_key = "${var.access_key}"
-  secret_key = "${var.secret_key}"
+  access_key = "XXXXXXXX"
+  secret_key = "XXXXXXXX"
   region = "${var.region}"
 }
 
@@ -152,7 +152,7 @@ default_action {
 
 resource "aws_key_pair" "terraform-keys3" {
 key_name = "terraform-keys3"
-public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD1k0iQN6MvBkrHPoVYJkChXsY1PAIF6zO045guCKcEpWpji6HxoHw4qTcWOxwXbvenNDGmqqS2bXRPLCuoUD0ONvLG1+5RjRX2Ci7Ee8HdRQID3gGEMQhz/APsJ1N5Lu/1uiZnomevjbCBj+QygnAh4wloVJRqNguV/VbNmgOKdzUmLbY6JOFh0VsgiYS1fn2YHfHLJyx/XqJajZqqGhEqETyHTsSMj8PRPAVK4o0TxZfmtk4QwgNZuY8s8z7hGw7yz7G5oqOPk9Wij391B/8aXJCWX14WQnV10qcym8Als0aeyZDmhkkSqg5WQ/Q4F0loSHtGM60gZLt2My0FXWk5 sandvenk@sandvenk-mac"
+public_key = "Paste your public key here"
 }
 
 
