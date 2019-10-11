@@ -1,0 +1,5 @@
+[web]
+18.219.54.105 ansible_ssh_user=ec2-user
+3.15.222.144 ansible_ssh_user=ec2-user
+13.59.219.189 ansible_ssh_user=centos
+18.220.252.118 ansible_ssh_user=centos

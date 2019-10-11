@@ -1,0 +1,76 @@
+---
+##########INSTALL HTTPD ON RHEL##########
+
+  - name: install httpd package
+    yum:
+      name: httpd
+      state: latest
+    notify:
+      - start httpd
+    when: ansible_distribution == "RedHat"
+
+#########DEPLOY APPLICATION###########
+  - name: Copy index.html
+    template:
+      src: index.html.j2
+      dest: /var/www/html/index.html
+      mode: 0777
+    when: ansible_distribution == "RedHat"
+
+
+####SETUP MONITORING####################
+
+  - name: Copy URL monitor script
+    copy:
+      src: check_http.sh
+      dest: /home/ec2-user/check_http.sh
+      mode: 0777
+    when: ansible_distribution == "RedHat"
+
+  - name: Setup Crontab to monitor URL
+    cron:
+      name: Monitor URL
+      minute: "*/5"
+      job: "/home/ec2-user/check_http.sh >> /home/ec2-user/check_http.log 2>&1"
+      disabled: "no"
+    become_user: ec2-user
+    when: ansible_distribution == "RedHat"
+
+#############INSTALL ON CENTOS####################
+
+  - name: Install packages on CentOS
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - unzip
+      - postfix
+    when: ansible_distribution == "CentOS"
+
+
+#############SYMBOLIC LINK####################
+
+  - name: Create symlink
+    file:
+      src: /opt
+      dest: /xyz
+      state: link
+      owner: root
+      group: root
+    when: ansible_distribution == "RedHat"
+
+#############DISABLE SELINUX##################
+
+  - name: selinux off
+    selinux:
+      state: disabled
+    when: ansible_distribution == "RedHat"
+
+#############LOGIN BANNER##################
+
+  - name: Copy Welcome msg
+    copy:
+      src: welcome.txt
+      dest: /etc/motd
+      mode: 0777
+    when: ansible_distribution == "RedHat"
