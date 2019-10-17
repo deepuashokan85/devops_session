@@ -1,5 +1,5 @@
 provider "aws" {
-   # Credentials to access aws cluster
+   alias = "eas"
    region = "us-east-2"
  }
 
