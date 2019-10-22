@@ -10,7 +10,7 @@ ami           = "ami-0520e698dd500b1d1"
   subnet_id     = "${var.subnet_id}"
   vpc_security_group_ids = ["${aws_security_group.allow_tls1.id}"]
   associate_public_ip_address = "${var.associate_public_ip_address}"
-  key_name = "jenkins"
+  key_name = "key"
   depends_on = [aws_security_group.allow_tls1]
 }
 
