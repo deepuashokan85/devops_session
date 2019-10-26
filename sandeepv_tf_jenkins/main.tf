@@ -1,5 +1,6 @@
 provider "aws" {
    region = "us-east-2"
+   version = "~> 2.33"
  }
 
 
@@ -9,7 +10,7 @@ ami           = "ami-0520e698dd500b1d1"
   instance_type = "${var.instance_type}"
   subnet_id     = "${var.subnet_id}"
   vpc_security_group_ids = ["${aws_security_group.allow_tls1.id}"]
-  associate_public_ip_address = "${var.associate_public_ip_address}"
+  associate_public_ip_address = "true"
   key_name = "jenkins"
   depends_on = [aws_security_group.allow_tls1]
 }
