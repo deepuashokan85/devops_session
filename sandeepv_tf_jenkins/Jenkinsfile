@@ -4,11 +4,9 @@ pipeline {
   stages {
     stage('terraform init') {
       steps {
-        sh 'cd sandeepv_tf_jenkins'
-        sh 'pwd'
-        sh '/usr/local/bin/terraform init'
-        sh '/usr/local/bin/terraform plan'
-        sh '/usr/local/bin/terraform apply --auto-approve'
+        sh 'cd sandeepv_tf_jenkins; /usr/local/bin/terraform init'
+        sh 'cd sandeepv_tf_jenkins; /usr/local/bin/terraform plan'
+        sh 'cd sandeepv_tf_jenkins; /usr/local/bin/terraform apply --auto-approve'
       }
     }
   }
