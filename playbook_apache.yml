@@ -1,0 +1,11 @@
+##
+## Ansible Playbook Install Apache on RHEL & Ubuntu OS calling Variable.yml File
+## Version 0.1
+---
+- hosts: all
+  remote_user: root
+  tasks:
+  - include: variable.yml
+  - name: Check Apache Service
+    service: name={{ package_name }} state=started
+    become: yes

@@ -1,0 +1,16 @@
+##
+## Varaible File called by Ansbile Playbook { Install Apache on RHEL & Ubuntu } 
+## Version 0.1
+
+- set_fact: package_name="httpd" when:> ansible_os_family == "Redhat"
+- set_fact: pacakge_name="apache2" when:> ansible_os_family == "Ubuntu"
+ 
+- name: Install httpd package for RHEL
+  yum: name=httpd state=latest
+  become: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Install httpd package for Ubuntu
+  apt: name=apache2 state=latest
+  become: yes
+  when: ansible_os_family == "Ubuntu"
